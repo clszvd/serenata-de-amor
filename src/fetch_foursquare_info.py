@@ -67,7 +67,7 @@ def load_foursquare_companies_dataset():
     """Return a DF with the data already collected. Fallback to empty one"""
 
     if FOURSQUARE_DATASET_PATH is not None:
-        return pd.read_csv(FOURSQUARE_DATASET_PATH)
+        return pd.read_csv(FOURSQUARE_DATASET_PATH, low_memory=False)
     return pd.DataFrame(columns=['cnpj'])
 
 
@@ -161,17 +161,21 @@ if __name__ == '__main__':
     for index, company in remaining_companies.iterrows():
         print('Looking for: %s' % company['trade_name'])
         fetched = get_venue(company)
+
         if fetched:
             print('Was found  : %s! <=======<<<' % fetched['name'])
-            fetched['trade_name'] = company['trade_name']
-            fetched['cnpj'] = company['cnpj']
-            fetched['clean_cnpj'] = company['clean_cnpj']
-            fetched['scraped_at'] = datetime.datetime.utcnow().isoformat()
-            fetched = json_normalize(fetched)
 
-            fetched_companies = pd.concat([fetched_companies, fetched])
         else:
+            fetched = {}
             print('No results.')
+
+        fetched = json_normalize(fetched)
+        fetched['trade_name'] = company['trade_name']
+        fetched['cnpj'] = company['cnpj']
+        fetched['clean_cnpj'] = company['clean_cnpj']
+        fetched['scraped_at'] = datetime.datetime.utcnow().isoformat()
+
+        fetched_companies = pd.concat([fetched_companies, fetched])
 
         if (index % 100) == 0 and index > 0:
             print('###########################################')
